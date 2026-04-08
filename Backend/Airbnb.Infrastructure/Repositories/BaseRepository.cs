@@ -37,14 +37,15 @@ namespace Airbnb.Infrastructure.Repositories
             return await _dbSet.ToListAsync();
         }
 
-        public Task<T?> GetByIdAsync(Guid id)
+        public async Task<T?> GetByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            return await _dbSet.FindAsync(id);
         }
 
-        public Task UpdateAsync(T entity)
+        public async Task UpdateAsync(T entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Update(entity);
+            await _context.SaveChangesAsync();
         }
     }
 }
