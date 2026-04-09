@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Airbnb.Domain.Entities
 {
-    public class BaseEntity
+    public abstract class BaseEntity
     {
         public Guid Id { get; set; }
     }

@@ -33,7 +33,8 @@ namespace Airbnb.Infrastructure.Persistence
 
             modelBuilder.Entity<Property>(entity =>
             {
-                entity.HasOne<User>()
+                // Se agregó p => p.Host
+                entity.HasOne(p => p.Host)
                       .WithMany()
                       .HasForeignKey(p => p.HostId)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -41,7 +42,8 @@ namespace Airbnb.Infrastructure.Persistence
 
             modelBuilder.Entity<BlockedDate>(entity =>
             {
-                entity.HasOne<Property>()
+                // Se agregó b => b.Property
+                entity.HasOne(b => b.Property)
                       .WithMany()
                       .HasForeignKey(b => b.PropertyId)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -49,12 +51,14 @@ namespace Airbnb.Infrastructure.Persistence
 
             modelBuilder.Entity<Booking>(entity =>
             {
-                entity.HasOne<Property>()
+                // Se agregó b => b.Property
+                entity.HasOne(b => b.Property)
                       .WithMany()
                       .HasForeignKey(b => b.PropertyId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne<User>()
+                // Se agregó b => b.Guest
+                entity.HasOne(b => b.Guest)
                      .WithMany()
                      .HasForeignKey(b => b.GuestId)
                      .OnDelete(DeleteBehavior.Restrict);
@@ -65,20 +69,23 @@ namespace Airbnb.Infrastructure.Persistence
 
             modelBuilder.Entity<Review>(entity =>
             {
-                entity.HasOne<Booking>()
+                // Se agregó r => r.Booking
+                entity.HasOne(r => r.Booking)
                       .WithMany()
                       .HasForeignKey(r => r.BookingId)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.ToTable(t => t.HasCheckConstraint(
-                    "CK_Review_Rating","Rating >= 1 AND Rating <= 5"));
+                    "CK_Review_Rating", "Rating >= 1 AND Rating <= 5"));
 
-                entity.HasOne<Property>()
+                // Se agregó r => r.Property
+                entity.HasOne(r => r.Property)
                       .WithMany()
                       .HasForeignKey(r => r.PropertyId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne<User>()
+                // Se agregó r => r.Guest
+                entity.HasOne(r => r.Guest)
                       .WithMany()
                       .HasForeignKey(r => r.GuestId)
                       .OnDelete(DeleteBehavior.Restrict);
@@ -86,13 +93,16 @@ namespace Airbnb.Infrastructure.Persistence
 
             modelBuilder.Entity<Notification>(entity =>
             {
-                entity.HasOne<User>()
+                // Asumiendo que la propiedad de navegación se llama User en tu clase Notification
+                // Se agregó n => n.User
+                entity.HasOne(n => n.User)
                       .WithMany()
                       .HasForeignKey(n => n.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                // ¡El fix para MySQL!
                 entity.Property(n => n.CreatedAt)
-                      .HasDefaultValueSql("UTC_TIMESTAMP()");
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
             });
 
         }
