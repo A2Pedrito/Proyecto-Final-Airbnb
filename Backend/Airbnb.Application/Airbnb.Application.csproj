@@ -11,8 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="UseCases\" />
+    <Folder Include="DTOs\Notification\" />
+    <Folder Include="UseCases\Auth\" />
+    <Folder Include="UseCases\Bookings\" />
+    <Folder Include="UseCases\Notifications\" />
+    <Folder Include="UseCases\Reviews\" />
+    <Folder Include="UseCases\Properties\" />
   </ItemGroup>
 
 </Project>
