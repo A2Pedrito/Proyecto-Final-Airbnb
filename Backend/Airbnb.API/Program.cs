@@ -1,5 +1,9 @@
 
+using Airbnb.Application.Interfaces;
+using Airbnb.Application.UseCases.Auth;
+using Airbnb.Domain.Interfaces;
 using Airbnb.Infrastructure.Persistence;
+using Airbnb.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Airbnb.API
@@ -21,6 +25,17 @@ namespace Airbnb.API
                     builder.Configuration.GetConnectionString("DefaultConnection"),
                     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
                 ));
+
+            builder.Services.AddScoped<IPasswordHasher, IPasswordHasher>();
+            builder.Services.AddScoped<IJwtProvider, IJwtProvider>();
+
+            // Repositorios
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            // Casos de Uso
+            builder.Services.AddScoped<RegisterUserUseCase>();
+            builder.Services.AddScoped<LoginUserUseCase>();
+            builder.Services.AddScoped<ConfirmAccountUseCase>();
 
             var app = builder.Build();
 

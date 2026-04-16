@@ -8,6 +8,7 @@ namespace Airbnb.Domain.Interfaces
     public interface IUserRepository : IBaseRepository<User>
     {
         public Task<User?> GetByEmailAsync(string email);
+        public Task<User?> GetByConfirmationTokenAsync(string token);
     }
 
 }

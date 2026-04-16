@@ -14,7 +14,7 @@ namespace Airbnb.Application.DTOs.Property
         public string Location { get; set; } = string.Empty;
         public decimal PricePerNight { get; set; }
         public int Capacity { get; set; }
-        public Guid Hostid { get; set; }
+        public Guid HostId { get; set; }
 
     }
 }

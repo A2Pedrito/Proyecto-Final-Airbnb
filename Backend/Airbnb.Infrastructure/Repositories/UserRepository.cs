@@ -16,6 +16,11 @@ namespace Airbnb.Infrastructure.Repositories
         {
         }
 
+        public async Task<User?> GetByConfirmationTokenAsync(string token)
+        {
+            return await _context.Set<User>().FirstOrDefaultAsync(u => u.ConfirmationToken == token);
+        }
+
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == email);
