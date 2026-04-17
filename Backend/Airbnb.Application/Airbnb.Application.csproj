@@ -14,7 +14,6 @@
     <Folder Include="UseCases\Bookings\" />
     <Folder Include="UseCases\Notifications\" />
     <Folder Include="UseCases\Reviews\" />
-    <Folder Include="UseCases\Properties\" />
   </ItemGroup>
 
   <ItemGroup>
