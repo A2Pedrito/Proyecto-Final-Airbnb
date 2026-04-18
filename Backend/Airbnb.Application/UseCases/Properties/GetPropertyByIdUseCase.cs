@@ -1,0 +1,46 @@
+﻿using Airbnb.Application.DTOs.Property;
+using Airbnb.Domain.Exceptions;
+using Airbnb.Domain.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Airbnb.Application.UseCases.Properties
+{
+    public class GetPropertyByIdUseCase
+    {
+        private readonly IPropertyRepository _propertyRepository;
+
+        public GetPropertyByIdUseCase(IPropertyRepository propertyRepository)
+        {
+            _propertyRepository = propertyRepository;
+        }
+
+        public async Task<PropertyResponse> ExecuteAsync(Guid id)
+        {
+            // Buscamos la propiedad específica
+            var property = await _propertyRepository.GetByIdAsync(id);
+
+            // Aplicamos la lógica de "Fail Fast" que vimos antes
+            if (property == null)
+            {
+                // Lanzamos la excepción de dominio
+                throw new NotFoundException($"La propiedad con el ID {id} no fue encontrada.");
+            }
+
+            // Si existe, devolvemos el objeto mapeado
+            return new PropertyResponse
+            {
+                Id = property.Id,
+                Title = property.Title ?? string.Empty,
+                Description = property.Description ?? string.Empty,
+                Location = property.Location ?? string.Empty,
+                PricePerNight = property.PricePerNight,
+                Capacity = property.Capacity,
+                HostId = property.HostId
+            };
+        }
+    }
+}

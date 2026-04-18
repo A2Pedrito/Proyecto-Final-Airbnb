@@ -9,5 +9,6 @@ namespace Airbnb.Domain.Interfaces
     {
         public Task<IEnumerable<Booking>> GetOverlappingAsync(Guid propertyId, DateOnly checkIn, DateOnly checkOut);
         public Task<IEnumerable<Booking>> GetByGuestIdAsync(Guid guestId);
+        public Task CancelAsync(Guid bookingId);
     }
 }

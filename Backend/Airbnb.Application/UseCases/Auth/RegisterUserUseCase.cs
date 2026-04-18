@@ -15,11 +15,13 @@ namespace Airbnb.Application.UseCases.Auth
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IEmailServices _emailServices;
 
-        public RegisterUserUseCase(IUserRepository userRepository, IPasswordHasher passwordHasher)
+        public RegisterUserUseCase(IUserRepository userRepository, IPasswordHasher passwordHasher, IEmailServices emailServices)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
+            _emailServices = emailServices;
         }
 
         public async Task<string> ExecuteAsync(RegisterRequest request)
@@ -46,6 +48,14 @@ namespace Airbnb.Application.UseCases.Auth
 
             await _userRepository.AddAsync(newUser);
 
+            try
+            {
+                await _emailServices.SendConfirmationEmailAsync(newUser.Email, newUser.ConfirmationToken!);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al intentar enviar el correo de confirmación a {newUser.Email}: {ex.Message}");
+            }
 
             return "Usuario registrado con éxito. Por favor verifica tu correo.";
         }

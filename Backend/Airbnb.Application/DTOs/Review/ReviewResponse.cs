@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Airbnb.Application.DTOs.Review
 {
@@ -13,5 +14,6 @@ namespace Airbnb.Application.DTOs.Review
         public string GuestName { get; set; } = string.Empty;
         public int Rating { get; set; }
         public string? Comment { get; set; }
+        public DateTime CreatedAt {get; set;}
     }
 }
