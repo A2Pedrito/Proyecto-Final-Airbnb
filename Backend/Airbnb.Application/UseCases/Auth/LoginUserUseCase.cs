@@ -24,7 +24,7 @@ namespace Airbnb.Application.UseCases.Auth
             _jwtProvider = jwtProvider;
         }
 
-        public async Task<LoginResponse> ExecuteAsyn(LoginRequest request)
+        public async Task<LoginResponse> ExecuteAsync(LoginRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)

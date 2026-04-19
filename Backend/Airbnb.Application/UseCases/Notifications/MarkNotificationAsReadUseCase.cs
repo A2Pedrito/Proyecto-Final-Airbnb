@@ -26,11 +26,6 @@ namespace Airbnb.Application.UseCases.Notifications
                 throw new NotFoundException("Notificación no encontrada o no pertenece a la usuaria.");
             }
 
-            if (notification.UserId != userId)
-            {
-                throw new UnauthorizedAccessException("No tiene permisos para marcar esta notificación como leída.");
-            }
-
             notification.IsRead = true;
 
             await _notificationRepository.UpdateAsync(notification);

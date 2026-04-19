@@ -16,11 +16,17 @@ namespace Airbnb.Infrastructure.Repositories
         {
         }
 
+        public async Task<BlockedDate?> GetByDateAsync(Guid propertyId, DateOnly date)
+        {
+            return await _context.Set<BlockedDate>()
+                .FirstOrDefaultAsync(b => b.PropertyId == propertyId && b.Date == date);
+        }
+
         public async Task<IEnumerable<BlockedDate>> GetByPropertyIdAsync(Guid propertyId)
         {
             return await _context.Set<BlockedDate>()
-                                 .Where(b => b.PropertyId == propertyId)
-                                 .ToListAsync();
+                .Where(b => b.PropertyId == propertyId)
+                .ToListAsync();
         }
     }
 }

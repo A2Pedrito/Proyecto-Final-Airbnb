@@ -17,21 +17,31 @@ namespace Airbnb.Infrastructure.Repositories
         {
         }
 
+        public async Task CancelAsync(Guid bookingId)
+        {
+            var booking = await _context.Set<Booking>().FindAsync(bookingId);
+            if (booking != null)
+            {
+                booking.Status = BookingStatus.Cancelled;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<IEnumerable<Booking>> GetByGuestIdAsync(Guid guestId)
         {
             return await _context.Set<Booking>()
-                                 .Where(b => b.GuestId == guestId)
-                                 .ToListAsync();
+                .Where(b => b.GuestId == guestId)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Booking>> GetOverlappingAsync(Guid propertyId, DateOnly checkIn, DateOnly checkOut)
         {
             return await _context.Set<Booking>()
-                                .Where(b => b.PropertyId == propertyId &&
-                                            b.Status == BookingStatus.Confirmed &&
-                                            b.CheckIn < checkOut &&
-                                            b.CheckOut > checkIn)
-                                .ToListAsync();
+            .Where(b => b.PropertyId == propertyId &&
+                        b.Status == BookingStatus.Confirmed &&
+                        b.CheckIn < checkOut &&
+                        b.CheckOut > checkIn)
+            .ToListAsync();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Airbnb.Application.DTOs.Property
 {
     public class PropertyFilterRequest
     {
-        public string Location { get; set; } = string.Empty;
+        public string? Location { get; set; } = string.Empty;
         public DateOnly? CheckIn { get; set; }
         public DateOnly? CheckOut { get; set; }
         public int? Capacity { get; set; }
