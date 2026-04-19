@@ -39,6 +39,7 @@ namespace Airbnb.Application.UseCases.Reviews
             {
                 Id = Guid.NewGuid(),
                 PropertyId = booking.PropertyId, // Asignado a la propiedad de la reserva
+                BookingId = request.BookingId,
                 GuestId = guestId,
                 Rating = request.Rating,         // Asumiendo que el DTO tiene este campo
                 Comment = request.Comment,       // Asumiendo que el DTO tiene este campo

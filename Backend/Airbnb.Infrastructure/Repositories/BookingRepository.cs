@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Airbnb.Domain.Exceptions;
 
 namespace Airbnb.Infrastructure.Repositories
 {
@@ -42,6 +43,35 @@ namespace Airbnb.Infrastructure.Repositories
                         b.CheckIn < checkOut &&
                         b.CheckOut > checkIn)
             .ToListAsync();
+        }
+
+        public async Task<Booking> CreateWithConcurrencyControlAsync(Booking booking)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
+            try
+            {
+                // Re-verificar solapamiento DENTRO de la transacción
+                var overlap = await _context.Set<Booking>()
+                    .Where(b => b.PropertyId == booking.PropertyId &&
+                                b.Status == BookingStatus.Confirmed &&
+                                b.CheckIn < booking.CheckOut &&
+                                b.CheckOut > booking.CheckIn)
+                    .AnyAsync();
+
+                if (overlap)
+                    throw new ConflictException("La propiedad ya no está disponible.");
+
+                _context.Set<Booking>().Add(booking);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return booking;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ using Airbnb.Domain.Entities;
 using Airbnb.Domain.Enum;
 using Airbnb.Domain.Exceptions;
 using Airbnb.Domain.Interfaces;
+using Airbnb.Application.Interfaces;
 using System;
 using System.Threading.Tasks;
 
@@ -12,15 +13,21 @@ namespace Airbnb.Application.UseCases.Bookings
         private readonly IBookingRepository _bookingRepository;
         private readonly IPropertyRepository _propertyRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IEmailServices _emailServices;
+        private readonly IUserRepository _userRepository;
 
         public CancelBookingUseCase(
             IBookingRepository bookingRepository,
             IPropertyRepository propertyRepository,
-            INotificationRepository notificationRepository)
+            INotificationRepository notificationRepository,
+            IEmailServices emailServices,
+            IUserRepository userRepository)
         {
             _bookingRepository = bookingRepository;
             _propertyRepository = propertyRepository;
             _notificationRepository = notificationRepository;
+            _emailServices = emailServices;
+            _userRepository = userRepository;
         }
 
         public async Task ExecuteAsync(Guid bookingId, Guid userId)
@@ -70,6 +77,15 @@ namespace Airbnb.Application.UseCases.Bookings
 
                 await _notificationRepository.AddAsync(hostNotification);
                 await _notificationRepository.AddAsync(guestNotification);
+                
+                // Obtener a los usuarios de la BD para sacar sus emails
+                var host = await _userRepository.GetByIdAsync(property.HostId);
+                var guest = await _userRepository.GetByIdAsync(booking.GuestId);
+
+                if (host != null && !string.IsNullOrEmpty(host.Email))
+                    await _emailServices.SendBookingCancelledEmailAsync(host.Email, hostNotification.Message);
+                if (guest != null && !string.IsNullOrEmpty(guest.Email))
+                    await _emailServices.SendBookingCancelledEmailAsync(guest.Email, guestNotification.Message);
             }
             catch
             {

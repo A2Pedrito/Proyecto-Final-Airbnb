@@ -23,7 +23,7 @@ namespace Airbnb.Application.UseCases.Properties
         /// </summary>
         /// <param name="filter">Objeto con los filtros (Location, CheckIn, CheckOut, Capacity, MaxPrice).</param>
         /// <returns>Lista de propiedades en formato DTO (PropertyResponse).</returns>
-        public async Task<IEnumerable<PropertyResponse>> ExecuteAsync(string? location, PropertyFilterRequest filter)
+        public async Task<IEnumerable<PropertyResponse>> ExecuteAsync(PropertyFilterRequest filter)
         {
             // Llamamos al repositorio pasándole los filtros del request.
             var properties = await _propertyRepository.GetAvailableAsync(

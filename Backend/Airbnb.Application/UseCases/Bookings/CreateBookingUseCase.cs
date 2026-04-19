@@ -3,6 +3,7 @@ using Airbnb.Domain.Entities;
 using Airbnb.Domain.Enum;
 using Airbnb.Domain.Exceptions;
 using Airbnb.Domain.Interfaces;
+using Airbnb.Application.Interfaces;
 
 namespace Airbnb.Application.UseCases.Bookings
 {
@@ -12,17 +13,23 @@ namespace Airbnb.Application.UseCases.Bookings
         private readonly IPropertyRepository _propertyRepository;
         private readonly IBlockedDateRepository _blockedDateRepository;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IEmailServices _emailServices;
+        private readonly IUserRepository _userRepository;
 
         public CreateBookingUseCase(
             IBookingRepository bookingRepository,
             IPropertyRepository propertyRepository,
             IBlockedDateRepository blockedDateRepository,
-            INotificationRepository notificationRepository)
+            INotificationRepository notificationRepository,
+            IEmailServices emailServices,
+            IUserRepository userRepository)
         {
             _bookingRepository = bookingRepository;
             _propertyRepository = propertyRepository;
             _blockedDateRepository = blockedDateRepository;
             _notificationRepository = notificationRepository;
+            _emailServices = emailServices;
+            _userRepository = userRepository;
         }
 
         public async Task<BookingResponse> ExecuteAsync(CreateBookingRequest request, Guid guestId)
@@ -40,14 +47,7 @@ namespace Airbnb.Application.UseCases.Bookings
             if (property.HostId == guestId)
                 throw new DomainExceptions("No puedes reservar tu propia propiedad.");
 
-            // REGLA 4: No debe haber reservas confirmadas que se solapen
-            var overlapping = await _bookingRepository.GetOverlappingAsync(
-                request.PropertyId, request.CheckIn, request.CheckOut);
-
-            if (overlapping.Any())
-                throw new ConflictException("La propiedad no está disponible en las fechas seleccionadas.");
-
-            // REGLA 5: No deben existir fechas bloqueadas en ese rango
+            // REGLA 4: No deben existir fechas bloqueadas en ese rango
             var blockedDates = await _blockedDateRepository.GetByPropertyIdAsync(request.PropertyId);
             bool hasBlockedDate = blockedDates.Any(bd =>
                 bd.Date >= request.CheckIn && bd.Date < request.CheckOut);
@@ -66,7 +66,7 @@ namespace Airbnb.Application.UseCases.Bookings
                 Status = BookingStatus.Confirmed
             };
 
-            await _bookingRepository.AddAsync(booking);
+            await _bookingRepository.CreateWithConcurrencyControlAsync(booking);
 
             // NOTIFICACIÓN al host (no debe bloquear la operación)
             try
@@ -80,6 +80,13 @@ namespace Airbnb.Application.UseCases.Bookings
                     CreatedAt = DateTime.UtcNow
                 };
                 await _notificationRepository.AddAsync(notification);
+                
+                // Buscar al host para enviarle el correo real
+                var host = await _userRepository.GetByIdAsync(property.HostId);
+                if (host != null && !string.IsNullOrEmpty(host.Email))
+                {
+                    await _emailServices.SendBookingCreatedEmailAsync(host.Email, notification.Message);
+                }
             }
             catch { /* La notificación falla sin afectar la reserva */ }
 

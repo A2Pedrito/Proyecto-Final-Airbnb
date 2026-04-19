@@ -15,5 +15,35 @@ namespace Airbnb.Infrastructure.Services
             
             return Task.CompletedTask;
         }
+
+        public Task SendBookingCreatedEmailAsync(string email, string message)
+        {
+            Console.WriteLine("========== EMAIL SIMULADO ==========");
+            Console.WriteLine($"Destinatario: {email}");
+            Console.WriteLine($"Mensaje: {message}");
+            Console.WriteLine("====================================");
+
+            return Task.CompletedTask;
+        }
+
+        public Task SendBookingCancelledEmailAsync(string email, string message)
+        {
+            Console.WriteLine("========== EMAIL SIMULADO ==========");
+            Console.WriteLine($"Destinatario: {email}");
+            Console.WriteLine($"Mensaje: {message}");
+            Console.WriteLine("====================================");
+
+            return Task.CompletedTask;
+        }
+
+        public Task SendBookingCompletedEmailAsync(string email, string message)
+        {
+            Console.WriteLine("========== EMAIL SIMULADO ==========");
+            Console.WriteLine($"Destinatario: {email}");
+            Console.WriteLine($"Mensaje: {message}");
+            Console.WriteLine("====================================");
+
+            return Task.CompletedTask;
+        }
     }
 }

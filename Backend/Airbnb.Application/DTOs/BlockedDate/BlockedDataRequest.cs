@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Airbnb.Application.DTOs.BlokedDate
+namespace Airbnb.Application.DTOs.BlockedDate
 {
     public class BlockedDateRequest
     {

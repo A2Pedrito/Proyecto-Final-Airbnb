@@ -54,7 +54,7 @@ namespace Airbnb.API.Controllers
                 MaxPrice = maxPrice
             };
 
-            var properties = await _getAllProperties.ExecuteAsync(location, filter);
+            var properties = await _getAllProperties.ExecuteAsync(filter);
             return Ok(properties);
         }
 
@@ -63,8 +63,6 @@ namespace Airbnb.API.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var property = await _getPropertyById.ExecuteAsync(id);
-            if (property == null)
-                return NotFound();
 
             return Ok(property);
         }

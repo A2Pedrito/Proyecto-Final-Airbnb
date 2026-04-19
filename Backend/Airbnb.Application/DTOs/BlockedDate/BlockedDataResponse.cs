@@ -1,6 +1,6 @@
 using System;
 
-namespace Airbnb.Application.DTOs.BlokedDate
+namespace Airbnb.Application.DTOs.BlockedDate
 {
     public class BlockedDataResponse
     {
