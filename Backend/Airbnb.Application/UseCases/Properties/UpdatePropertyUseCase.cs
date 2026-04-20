@@ -35,6 +35,7 @@ namespace Airbnb.Application.UseCases.Properties
             // 3. Actualizamos solo los campos permitidos (Location no se toca)
             property.Title = request.Title;
             property.Description = request.Description;
+            property.Location = request.Location;
             property.PricePerNight = request.PricePerNight;
             property.Capacity = request.Capacity;
 

@@ -26,11 +26,7 @@ namespace Airbnb.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetMyNotifications([FromQuery] bool onlyUnread = false)
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaim, out Guid userId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var notifications = await _getMyNotifications.ExecuteAsync(userId, onlyUnread);
             return Ok(notifications);
@@ -39,11 +35,7 @@ namespace Airbnb.API.Controllers
         [HttpPut("{id}/read")]
         public async Task<IActionResult> MarkAsRead(Guid id)
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaim, out Guid userId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _markNotificationAsRead.ExecuteAsync(id, userId);
             return Ok(new { message = "Notificación marcada como leída exitosamente." });

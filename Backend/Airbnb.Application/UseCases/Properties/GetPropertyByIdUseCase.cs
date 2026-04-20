@@ -27,7 +27,7 @@ namespace Airbnb.Application.UseCases.Properties
             if (property == null)
             {
                 // Lanzamos la excepción de dominio
-                throw new NotFoundException($"La propiedad con el ID {id} no fue encontrada.");
+                throw new NotFoundException($"La propiedad no fue encontrada. Favor de verificar el ID proporcionado.");
             }
 
             // Si existe, devolvemos el objeto mapeado
@@ -37,7 +37,7 @@ namespace Airbnb.Application.UseCases.Properties
                 Title = property.Title ?? string.Empty,
                 Description = property.Description ?? string.Empty,
                 Location = property.Location ?? string.Empty,
-                PricePerNight = property.PricePerNight,
+                PricePerNight = Math.Round(property.PricePerNight, 2),
                 Capacity = property.Capacity,
                 HostId = property.HostId
             };

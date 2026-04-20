@@ -12,12 +12,14 @@ namespace Airbnb.API.Controllers
         private readonly RegisterUserUseCase _register;
         private readonly ConfirmAccountUseCase _confirm;
         private readonly LoginUserUseCase _login;
+        private readonly ResendConfirmationUseCase _resendConfirmation;
 
-        public AuthController(RegisterUserUseCase register, ConfirmAccountUseCase confirm, LoginUserUseCase login)
+        public AuthController(RegisterUserUseCase register, ConfirmAccountUseCase confirm, LoginUserUseCase login, ResendConfirmationUseCase resendConfirmation)
         {
             _register = register;
             _confirm = confirm;
             _login = login;
+            _resendConfirmation = resendConfirmation;
         }
 
         [HttpPost("register")]
@@ -27,8 +29,8 @@ namespace Airbnb.API.Controllers
             return Ok(new { message = result }); 
         }
 
-        [HttpGet("confirm")]
-        public async Task<IActionResult> Confirm([FromQuery] string token)
+        [HttpGet("confirm/{token}")]
+        public async Task<IActionResult> Confirm(string token)
         { 
             var result = await _confirm.ExecuteAsync(token);
             return Ok(new { message = result }); 
@@ -39,6 +41,13 @@ namespace Airbnb.API.Controllers
         { 
             var result = await _login.ExecuteAsync(request);
             return Ok(result); 
+        }
+
+        [HttpPost("resend-confirmation/{email}")]
+        public async Task<IActionResult> ResendConfirmation(string email)
+        {
+            var result = await _resendConfirmation.ExecuteAsync(email);
+            return Ok(new { message = result });
         }
 
     }

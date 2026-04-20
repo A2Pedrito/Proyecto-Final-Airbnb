@@ -54,6 +54,7 @@ namespace Airbnb.API
             builder.Services.AddScoped<RegisterUserUseCase>();
             builder.Services.AddScoped<LoginUserUseCase>();
             builder.Services.AddScoped<ConfirmAccountUseCase>();
+            builder.Services.AddScoped<ResendConfirmationUseCase>();
             builder.Services.AddScoped<GetAllPropertiesUseCase>();
             builder.Services.AddScoped<GetPropertyByIdUseCase>();
             builder.Services.AddScoped<CreatePropertyUseCase>();

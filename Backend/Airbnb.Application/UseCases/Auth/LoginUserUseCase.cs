@@ -40,7 +40,7 @@ namespace Airbnb.Application.UseCases.Auth
 
             if (!user.IsConfirmed)
             {
-                throw new DomainExceptions("No está confirmado");
+                throw new DomainExceptions("El correo no está confirmado");
             }
 
             string token = _jwtProvider.GenerateToken(user);

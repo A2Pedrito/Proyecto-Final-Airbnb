@@ -39,7 +39,7 @@ namespace Airbnb.Application.UseCases.Properties
                 Title = p.Title ?? string.Empty,
                 Description = p.Description ?? string.Empty,
                 Location = p.Location ?? string.Empty,
-                PricePerNight = p.PricePerNight,
+                PricePerNight = Math.Round(p.PricePerNight, 2),
                 Capacity = p.Capacity,
                 HostId = p.HostId
             });

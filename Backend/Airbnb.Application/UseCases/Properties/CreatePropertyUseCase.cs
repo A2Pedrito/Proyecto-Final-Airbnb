@@ -37,9 +37,9 @@ namespace Airbnb.Application.UseCases.Properties
             {
                 Id = property.Id,
                 Title = property.Title,
-                Description = property.Description, // Agregado porque lo pusiste en tu DTO
+                Description = property.Description, 
                 Location = property.Location,
-                PricePerNight = property.PricePerNight,
+                PricePerNight = Math.Round(property.PricePerNight, 2),
                 Capacity = property.Capacity,
                 HostId = property.HostId
             };

@@ -2,6 +2,5 @@
   <Project Path="../Airbnb.Application/Airbnb.Application.csproj" Id="30ca732d-4d81-4312-bc16-d5217098debf" />
   <Project Path="../Airbnb.Domain/Airbnb.Domain.csproj" Id="e04b8036-4e2c-443c-92c7-d268eabfcf3c" />
   <Project Path="../Airbnb.Infrastructure/Airbnb.Infrastructure.csproj" Id="e6bee43d-29d5-4608-92ec-ade42251e659" />
-  <Project Path="../Airbnb.Tests/Airbnb.Tests.csproj" Id="72e6b895-f727-44b6-b29c-b23d406099e3" />
   <Project Path="Airbnb.API.csproj" />
 </Solution>

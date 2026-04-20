@@ -37,12 +37,7 @@ namespace Airbnb.API.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] string? location, 
-            [FromQuery] DateOnly? checkIn, 
-            [FromQuery] DateOnly? checkOut, 
-            [FromQuery] int? capacity, 
-            [FromQuery] decimal? maxPrice)
+        public async Task<IActionResult> GetAll([FromQuery] string? location, [FromQuery] DateOnly? checkIn, [FromQuery] DateOnly? checkOut, [FromQuery] int? capacity, [FromQuery] decimal? maxPrice)
         {
 
             var filter = new PropertyFilterRequest
@@ -71,11 +66,7 @@ namespace Airbnb.API.Controllers
         [Authorize(Roles = "Host")]
         public async Task<IActionResult> Create([FromBody] CreatePropertyRequest request)
         {
-            var hostIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(hostIdClaim, out Guid hostId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var hostId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var propertyResponse = await _createProperty.ExecuteAsync(request, hostId);
             return CreatedAtAction(nameof(GetById), new { id = propertyResponse.Id }, propertyResponse);
@@ -85,11 +76,7 @@ namespace Airbnb.API.Controllers
         [Authorize(Roles = "Host")]
         public async Task<IActionResult> Update( Guid id, [FromBody] UpdatePropertyRequest request)
         {
-            var hostIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(hostIdClaim, out Guid hostId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var hostId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _updateProperty.ExecuteAsync(id, hostId, request);
 
@@ -100,11 +87,7 @@ namespace Airbnb.API.Controllers
         [Authorize(Roles = "Host")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var hostIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(hostIdClaim, out Guid hostId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var hostId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _deleteProperty.ExecuteAsync(id, hostId);
             return NoContent();
@@ -114,11 +97,7 @@ namespace Airbnb.API.Controllers
         [Authorize(Roles = "Host")]
         public async Task<IActionResult> BlockDates(Guid id, [FromBody] List<DateOnly> dates)
         {
-            var hostIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(hostIdClaim, out Guid hostId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var hostId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _blockDates.ExecuteAsync(id, hostId, dates);
             return Ok(new { message = "Fechas bloqueadas exitosamente." });
@@ -128,11 +107,7 @@ namespace Airbnb.API.Controllers
         [Authorize(Roles = "Host")]
         public async Task<IActionResult> UnblockDates(Guid id, [FromBody] List<DateOnly> dates)
         {
-            var hostIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(hostIdClaim, out Guid hostId))
-            {
-                return Unauthorized(new { message = "Token inválido o no contiene el ID del usuario." });
-            }
+            var hostId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _unblockedDates.ExecuteAsync(id, hostId, dates);
             return Ok(new { message = "Fechas desbloqueadas exitosamente." });

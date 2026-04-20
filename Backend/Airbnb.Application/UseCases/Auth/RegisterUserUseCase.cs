@@ -43,7 +43,7 @@ namespace Airbnb.Application.UseCases.Auth
                 Role = request.Role,
                 IsConfirmed = false,
                 ConfirmationToken = Guid.NewGuid().ToString(),
-                TokenExpiry = DateTime.UtcNow.AddMinutes(10)
+                TokenExpiry = DateTime.UtcNow.AddMinutes(2)
             };
 
             await _userRepository.AddAsync(newUser);
