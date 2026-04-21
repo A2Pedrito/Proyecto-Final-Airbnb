@@ -34,15 +34,20 @@ namespace Airbnb.Application.UseCases.Auth
             }
 
             // Generamos un nuevo token y fecha de expiración
-            user.ConfirmationToken = Guid.NewGuid().ToString();
-            user.TokenExpiry = DateTime.UtcNow.AddMinutes(10);
-
-            await _userRepository.UpdateAsync(user);
+            var newConfirmationToken = Guid.NewGuid().ToString();
+            var newExpiryDate = DateTime.UtcNow.AddMinutes(10);
 
             // Opcional: Imprimir en consola para facilitar las pruebas
-            Console.WriteLine($"[DEBUG] Nuevo token de confirmación para {user.Email}: {user.ConfirmationToken}");
+            Console.WriteLine($"[DEBUG] Nuevo token de confirmación para {user.Email}: {newConfirmationToken}");
 
-            await _emailServices.SendConfirmationEmailAsync(user.Email!, user.ConfirmationToken!);
+            // Primero intentamos enviar el correo. Si esto falla, la excepción se propagará
+            // y no actualizaremos la base de datos, manteniendo el token antiguo válido.
+            await _emailServices.SendConfirmationEmailAsync(user.Email!, newConfirmationToken);
+
+            // Si el correo se envió con éxito, actualizamos el usuario en la base de datos.
+            user.ConfirmationToken = newConfirmationToken;
+            user.TokenExpiry = newExpiryDate;
+            await _userRepository.UpdateAsync(user);
 
             return "Se ha enviado un nuevo enlace de confirmación.";
         }

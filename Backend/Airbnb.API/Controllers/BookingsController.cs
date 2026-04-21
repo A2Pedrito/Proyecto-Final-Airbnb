@@ -4,6 +4,7 @@ using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Airbnb.Domain.Interfaces;
 
 
 namespace Airbnb.API.Controllers
@@ -16,12 +17,18 @@ namespace Airbnb.API.Controllers
         private readonly CreateBookingUseCase _createBooking;
         private readonly CancelBookingUseCase _cancelBooking;
         private readonly CompleteBookingUseCase _completeBooking;
-    
-        public BookingsController(CreateBookingUseCase createBooking, CancelBookingUseCase cancelBooking, CompleteBookingUseCase completeBooking)
+        private readonly IBookingRepository _bookingRepository;
+
+        public BookingsController(
+            CreateBookingUseCase createBooking,
+            CancelBookingUseCase cancelBooking,
+            CompleteBookingUseCase completeBooking,
+            IBookingRepository bookingRepository)
         {
             _createBooking = createBooking;
             _cancelBooking = cancelBooking;
             _completeBooking = completeBooking;
+            _bookingRepository = bookingRepository;
         }
     
         [HttpPost]
@@ -56,5 +63,16 @@ namespace Airbnb.API.Controllers
             await _completeBooking.ExecuteAsync(id, userId);
             return Ok(new { message = "Reserva completada exitosamente." });
         }
+
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyBookings()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdClaim, out Guid userId))
+                return Unauthorized();
+
+            var bookings = await _bookingRepository.GetByGuestIdAsync(userId);
+            return Ok(bookings);
+}
     }
 }

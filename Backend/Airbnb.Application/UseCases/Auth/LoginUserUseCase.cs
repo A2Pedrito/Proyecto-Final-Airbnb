@@ -1,4 +1,4 @@
-﻿using Airbnb.Application.DTOs.Auth;
+﻿﻿using Airbnb.Application.DTOs.Auth;
 using Airbnb.Application.Interfaces;
 using Airbnb.Domain.Exceptions;
 using Airbnb.Domain.Interfaces;
@@ -27,15 +27,15 @@ namespace Airbnb.Application.UseCases.Auth
         public async Task<LoginResponse> ExecuteAsync(LoginRequest request)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
-            if (user == null)
+            
+            // Para prevenir la enumeración de usuarios, no revelamos si el correo no existe
+            // o si la contraseña es incorrecta. En ambos casos, el resultado es el mismo:
+            // fallo de autenticación.
+            if (user == null || !_passwordHasher.Verify(request.Password, user.PasswordHash!))
             {
-                throw new NotFoundException("El correo no esta registrado.");
-            }
-
-            bool isPasswordValid = _passwordHasher.Verify(request.Password, user.PasswordHash!);
-            if (!isPasswordValid)
-            {
-                throw new UnauthorizedException("Contraseña inválida");
+                // Lanzamos la misma excepción genérica en ambos casos.
+                // El código de estado HTTP 401 Unauthorized es el apropiado aquí.
+                throw new UnauthorizedException("Correo o contraseña inválidos.");
             }
 
             if (!user.IsConfirmed)

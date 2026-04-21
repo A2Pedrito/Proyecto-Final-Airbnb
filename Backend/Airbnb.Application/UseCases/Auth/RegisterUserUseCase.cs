@@ -1,4 +1,4 @@
-﻿using Airbnb.Application.DTOs.Auth;
+﻿﻿using Airbnb.Application.DTOs.Auth;
 using Airbnb.Application.Interfaces;
 using Airbnb.Domain.Entities;
 using Airbnb.Domain.Exceptions;
@@ -48,14 +48,7 @@ namespace Airbnb.Application.UseCases.Auth
 
             await _userRepository.AddAsync(newUser);
 
-            try
-            {
-                await _emailServices.SendConfirmationEmailAsync(newUser.Email, newUser.ConfirmationToken!);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al intentar enviar el correo de confirmación a {newUser.Email}: {ex.Message}");
-            }
+            await _emailServices.SendConfirmationEmailAsync(newUser.Email, newUser.ConfirmationToken!);
 
             return "Usuario registrado con éxito. Por favor verifica tu correo.";
         }

@@ -1,72 +1,162 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getProperties, deleteProperty } from '../../api/propertyService';
-import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { createProperty, updateProperty, getPropertyById } from '../../api/propertyService';
 
-export default function MyPropertiesPage() {
-  const { user } = useAuth();
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+const fields = [
+  {
+    name: 'title',
+    label: 'Título de la propiedad',
+    subtitle: 'El nombre que verán los huéspedes al buscar',
+    placeholder: 'Ej: Casa moderna en el centro con vista al mar',
+    type: 'text',
+  },
+  {
+    name: 'description',
+    label: 'Descripción',
+    subtitle: 'Describe qué hace especial a tu propiedad',
+    placeholder: 'Ej: Espaciosa casa de 2 habitaciones con piscina, a 5 minutos de la playa...',
+    type: 'text',
+  },
+  {
+    name: 'location',
+    label: 'Ubicación',
+    subtitle: 'Ciudad o zona donde se encuentra la propiedad (no se puede editar después)',
+    placeholder: 'Ej: Punta Cana, La Altagracia',
+    type: 'text',
+  },
+  {
+    name: 'pricePerNight',
+    label: 'Precio por noche',
+    subtitle: 'Tarifa en dólares que pagarán los huéspedes por cada noche',
+    placeholder: 'Ej: 120',
+    type: 'number',
+  },
+  {
+    name: 'capacity',
+    label: 'Capacidad máxima',
+    subtitle: 'Número máximo de personas que puede alojar la propiedad',
+    placeholder: 'Ej: 4',
+    type: 'number',
+  },
+];
 
-  // Carga las propiedades al entrar a la página
+export default function PropertyFormPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEditing = Boolean(id);
+
+  const [form, setForm] = useState({
+    title: '', description: '', location: '', pricePerNight: '', capacity: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    getProperties()
-      .then(res => {
-        // Filtra solo las propiedades de este host
-        // Para obtener el ID del host, decodificamos el JWT
-        const payload = JSON.parse(atob(user.token.split('.')[1]));
-        const hostId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-        const mine = res.data.filter(p => p.hostId === hostId);
-        setProperties(mine);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    if (isEditing) {
+      getPropertyById(id).then(res => {
+        const p = res.data;
+        setForm({
+          title: p.title,
+          description: p.description,
+          location: p.location,
+          pricePerNight: p.pricePerNight,
+          capacity: p.capacity,
+        });
+      });
+    }
+  }, [id]);
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar esta propiedad?')) return;
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const data = {
+      ...form,
+      pricePerNight: parseFloat(form.pricePerNight),
+      capacity: parseInt(form.capacity),
+    };
     try {
-      await deleteProperty(id);
-      setProperties(prev => prev.filter(p => p.id !== id));
-    } catch {
-      alert('No se pudo eliminar la propiedad.');
+      if (isEditing) await updateProperty(id, data);
+      else await createProperty(data);
+      navigate('/host/properties');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al guardar la propiedad. Verifica los datos.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <p className="text-center mt-10 text-gray-500">Cargando...</p>;
-
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Mis Propiedades</h1>
-        <Link to="/host/properties/new"
-          className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700 text-sm">
-          + Nueva propiedad
-        </Link>
+    <div className="max-w-xl mx-auto">
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Panel del host</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isEditing ? 'Editar propiedad' : 'Nueva propiedad'}
+        </h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {isEditing
+            ? 'Actualiza los datos de tu alojamiento'
+            : 'Completa los datos para publicar tu alojamiento'}
+        </p>
       </div>
 
-      {properties.length === 0 && (
-        <p className="text-gray-500 text-center mt-10">No tienes propiedades aún.</p>
-      )}
-
-      <div className="grid gap-4">
-        {properties.map(p => (
-          <div key={p.id} className="bg-white border rounded-xl p-4 flex justify-between items-start shadow-sm">
-            <div>
-              <h2 className="font-semibold text-lg">{p.title}</h2>
-              <p className="text-gray-500 text-sm">{p.location} · ${p.pricePerNight}/noche · {p.capacity} huéspedes</p>
-            </div>
-            <div className="flex gap-2 mt-1">
-              <Link to={`/host/properties/${p.id}/edit`}
-                className="text-sm border border-gray-300 px-3 py-1 rounded-lg hover:bg-gray-50">
-                Editar
-              </Link>
-              <button onClick={() => handleDelete(p.id)}
-                className="text-sm border border-red-300 text-red-600 px-3 py-1 rounded-lg hover:bg-red-50">
-                Eliminar
-              </button>
-            </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        {error && (
+          <div className="mb-5 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-xl">
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
-        ))}
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {fields.map(field => {
+            // La ubicación no se puede editar
+            const isDisabled = isEditing && field.name === 'location';
+            return (
+              <div key={field.name}>
+                <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide mb-1">
+                  {field.label}
+                </p>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  {field.subtitle}
+                </label>
+                <input
+                  name={field.name}
+                  type={field.type}
+                  value={form[field.name]}
+                  onChange={handleChange}
+                  placeholder={field.placeholder}
+                  disabled={isDisabled}
+                  className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition
+                    ${isDisabled ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
+                  required
+                />
+                {isDisabled && (
+                  <p className="text-xs text-amber-600 mt-1">⚠️ La ubicación no se puede cambiar después de crear la propiedad</p>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-rose-600 text-white py-2.5 rounded-xl font-semibold hover:bg-rose-700 active:scale-95 transition disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : isEditing ? '💾 Guardar cambios' : '🚀 Publicar propiedad'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/host/properties')}
+              className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

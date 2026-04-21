@@ -68,6 +68,7 @@ namespace Airbnb.API
             builder.Services.AddScoped<CancelBookingUseCase>();
             builder.Services.AddScoped<MarkNotificationAsReadUseCase>();
             builder.Services.AddScoped<GetMyNotificationsUseCase>();
+            builder.Services.AddScoped<IEmailServices, EmailService>();
 
             builder.Services.AddCors();
 
