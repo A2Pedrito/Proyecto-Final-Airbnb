@@ -1,4 +1,4 @@
-﻿using Airbnb.Application.DTOs.Property;
+using Airbnb.Application.DTOs.Property;
 using Airbnb.Domain.Exceptions;
 using Airbnb.Domain.Interfaces;
 using System;
@@ -12,10 +12,12 @@ namespace Airbnb.Application.UseCases.Properties
     public class GetPropertyByIdUseCase
     {
         private readonly IPropertyRepository _propertyRepository;
+        private readonly IReviewRepository _reviewRepository;
 
-        public GetPropertyByIdUseCase(IPropertyRepository propertyRepository)
+        public GetPropertyByIdUseCase(IPropertyRepository propertyRepository, IReviewRepository reviewRepository)
         {
             _propertyRepository = propertyRepository;
+            _reviewRepository = reviewRepository;
         }
 
         public async Task<PropertyResponse> ExecuteAsync(Guid id)
@@ -30,6 +32,8 @@ namespace Airbnb.Application.UseCases.Properties
                 throw new NotFoundException($"La propiedad no fue encontrada. Favor de verificar el ID proporcionado.");
             }
 
+            var averageRating = await _reviewRepository.GetAverageRatingByPropertyIdAsync(id);
+
             // Si existe, devolvemos el objeto mapeado
             return new PropertyResponse
             {
@@ -39,7 +43,8 @@ namespace Airbnb.Application.UseCases.Properties
                 Location = property.Location ?? string.Empty,
                 PricePerNight = Math.Round(property.PricePerNight, 2),
                 Capacity = property.Capacity,
-                HostId = property.HostId
+                HostId = property.HostId,
+                AverageRating = Math.Round(averageRating, 1)
             };
         }
     }

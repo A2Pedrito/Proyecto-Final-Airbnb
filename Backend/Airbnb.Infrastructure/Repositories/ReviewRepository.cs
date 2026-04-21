@@ -1,4 +1,4 @@
-﻿using Airbnb.Domain.Entities;
+using Airbnb.Domain.Entities;
 using Airbnb.Domain.Interfaces;
 using Airbnb.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,17 @@ namespace Airbnb.Infrastructure.Repositories
             return await _context.Set<Review>()
                                  .Where(r => r.PropertyId == propertyId)
                                  .ToListAsync();
+        }
+
+        public async Task<decimal> GetAverageRatingByPropertyIdAsync(Guid propertyId)
+        {
+            var ratings = await _context.Set<Review>()
+                                        .Where(r => r.PropertyId == propertyId)
+                                        .Select(r => r.Rating)
+                                        .ToListAsync();
+            
+            if (!ratings.Any()) return 0;
+            return (decimal)ratings.Average();
         }
     }
 }

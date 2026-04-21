@@ -1,4 +1,4 @@
-﻿using Airbnb.Application.DTOs.Property;
+using Airbnb.Application.DTOs.Property;
 using Airbnb.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,10 +11,12 @@ namespace Airbnb.Application.UseCases.Properties
     public class GetAllPropertiesUseCase
     {
         private readonly IPropertyRepository _propertyRepository;
+        private readonly IReviewRepository _reviewRepository;
 
-        public GetAllPropertiesUseCase(IPropertyRepository propertyRepository)
+        public GetAllPropertiesUseCase(IPropertyRepository propertyRepository, IReviewRepository reviewRepository)
         {
             _propertyRepository = propertyRepository;
+            _reviewRepository = reviewRepository;
         }
 
         /// <summary>
@@ -33,16 +35,24 @@ namespace Airbnb.Application.UseCases.Properties
                 filter.Capacity, 
                 filter.MaxPrice);
 
-            return properties.Select(p => new PropertyResponse
+            var response = new List<PropertyResponse>();
+            foreach (var p in properties)
             {
-                Id = p.Id,
-                Title = p.Title ?? string.Empty,
-                Description = p.Description ?? string.Empty,
-                Location = p.Location ?? string.Empty,
-                PricePerNight = Math.Round(p.PricePerNight, 2),
-                Capacity = p.Capacity,
-                HostId = p.HostId
-            });
+                var averageRating = await _reviewRepository.GetAverageRatingByPropertyIdAsync(p.Id);
+                response.Add(new PropertyResponse
+                {
+                    Id = p.Id,
+                    Title = p.Title ?? string.Empty,
+                    Description = p.Description ?? string.Empty,
+                    Location = p.Location ?? string.Empty,
+                    PricePerNight = Math.Round(p.PricePerNight, 2),
+                    Capacity = p.Capacity,
+                    HostId = p.HostId,
+                    AverageRating = Math.Round(averageRating, 1)
+                });
+            }
+
+            return response;
         }
     }
 }

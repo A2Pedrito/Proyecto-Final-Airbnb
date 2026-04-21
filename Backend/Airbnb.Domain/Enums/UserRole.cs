@@ -4,9 +4,10 @@ using System.Text;
 
 namespace Airbnb.Domain.Enum
 {
+    [Flags]
     public enum UserRole
     {
-        Host,
-        Guest
+        Host = 1,
+        Guest = 2
     }
 }

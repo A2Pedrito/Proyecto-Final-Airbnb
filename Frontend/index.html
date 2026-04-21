@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Airbnb Clone — Plataforma de Reservas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-brand">Air<span>bnb</span></div>
+    <div class="nav-links" id="nav-links">
+      <span id="nav-greeting" style="display:none; margin-right: 15px; font-weight: 600; font-style: italic; color: var(--primary);"></span>
+      <button class="nav-btn" onclick="showPage('search')">Explorar</button>
+      <span id="nav-auth-links" style="display:none;display:flex;gap:4px;align-items:center;">
+        <button class="nav-btn" onclick="showPage('bookings')" id="nav-bookings" style="display:none">Mis Reservas</button>
+        <button class="nav-btn" onclick="showPage('properties')" id="nav-properties" style="display:none">Mis Propiedades</button>
+        <button class="nav-btn" onclick="showPage('notifications')" id="nav-notifications">
+          Notificaciones <span class="badge" id="notif-badge" style="display:none"></span>
+        </button>
+        <button class="btn-ghost" onclick="logout()" style="padding:7px 14px;font-size:0.85rem;">Salir</button>
+      </span>
+      <span id="nav-guest-links">
+        <button class="btn-primary" onclick="showPage('login')">Iniciar sesión</button>
+      </span>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <!-- PAGE: SEARCH/HOME -->
+    <div class="page active" id="page-search">
+      <div class="hero">
+        <h1 class="hero-title">Encuentra tu próximo<br><em>refugio perfecto</em></h1>
+      </div>
+      <div class="search-bar" id="search-form">
+        <div>
+          <label>Ubicación</label>
+          <input type="text" id="f-location" placeholder="Ciudad, barrio..." />
+        </div>
+        <div>
+          <label>Check-in</label>
+          <input type="date" id="f-checkin" />
+        </div>
+        <div>
+          <label>Check-out</label>
+          <input type="date" id="f-checkout" />
+        </div>
+        <div>
+          <label>Huéspedes</label>
+          <input type="number" id="f-capacity" min="1" placeholder="1" />
+        </div>
+        <div>
+          <label>Precio máximo (RD$)</label>
+          <input type="number" id="f-maxprice" min="1" placeholder="5000" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="btn-primary" onclick="searchProperties()" style="width:auto;padding:10px 24px;">Buscar</button>
+        </div>
+      </div>
+      <br/>
+      <div id="properties-section">
+        <h2 class="section-title">Propiedades disponibles</h2>
+        <div id="properties-grid" class="properties-grid"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: LOGIN -->
+    <div class="page" id="page-login">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <h2 class="auth-title">Bienvenido de vuelta</h2>
+          <p class="auth-sub">Inicia sesión para continuar</p>
+          <div id="login-confirm-banner" class="confirm-banner" style="display:none;">
+            <div id="login-confirm-message" class="confirm-banner-message"></div>
+            <button type="button" class="confirm-banner-btn" onclick="showPage('login')">Ir a iniciar sesión</button>
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="login-email" placeholder="tu@correo.com" />
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+          </div>
+          <button class="btn-primary" onclick="doLogin()" style="width:100%;padding:13px;">Iniciar sesión</button>
+          <div class="auth-footer">
+            ¿No tienes cuenta? <button onclick="showPage('register')">Regístrate</button>
+          </div>
+          <div class="auth-footer" style="margin-top:8px;">
+            ¿No confirmaste tu cuenta? <button onclick="showResend()">Reenviar confirmación</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: REGISTER -->
+    <div class="page" id="page-register">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <h2 class="auth-title">Crear cuenta</h2>
+          <p class="auth-sub">Únete a StayNest hoy</p>
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="reg-name" placeholder="Tu nombre" />
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="reg-email" placeholder="tu@correo.com" />
+          </div>
+          <div class="form-group">
+            <label>Contraseña (mínimo 6 caracteres)</label>
+            <input type="password" id="reg-password" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <label>Roles (puedes elegir ambos)</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+              <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:0.92rem;">
+                <input type="checkbox" id="reg-role-host" style="width:auto;" />
+                Anfitrión (Host) - Publicar propiedades
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:0.92rem;">
+                <input type="checkbox" id="reg-role-guest" style="width:auto;" checked />
+                Huésped (Guest) - Realizar reservas
+              </label>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="doRegister()" style="width:100%;padding:13px;">Crear cuenta</button>
+          <div class="auth-footer">
+            ¿Ya tienes cuenta? <button onclick="showPage('login')">Inicia sesión</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: BOOKINGS (GUEST) -->
+    <div class="page" id="page-bookings">
+      <h2 class="section-title">Mis Reservas</h2>
+      <div id="bookings-list"></div>
+    </div>
+
+    <!-- PAGE: PROPERTIES (HOST) -->
+    <div class="page" id="page-properties">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 class="section-title" style="margin:0">Mis Propiedades</h2>
+        <button class="btn-primary" onclick="openPropertyModal()">+ Nueva propiedad</button>
+      </div>
+      <div id="my-properties-list"></div>
+    </div>
+
+    <!-- PAGE: NOTIFICATIONS -->
+    <div class="page" id="page-notifications">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h2 class="section-title" style="margin:0">Notificaciones</h2>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+          <input type="checkbox" id="only-unread" onchange="loadNotifications()" style="width:auto;" />
+          <span style="font-size:0.88rem;color:var(--muted);">Solo no leídas</span>
+        </label>
+      </div>
+      <div id="notifications-list"></div>
+    </div>
+
+    <!-- PAGE: PROPERTY DETAIL -->
+    <div class="page" id="page-detail">
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <!-- Property Modal -->
+  <div class="modal-overlay" id="modal-property">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('modal-property')">✕</button>
+      <h3 class="modal-title" id="property-modal-title">Nueva Propiedad</h3>
+      <input type="hidden" id="prop-edit-id" />
+      <div class="form-group">
+        <label>Título</label>
+        <input type="text" id="prop-title" placeholder="Ej: Apartamento acogedor en el centro" />
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea id="prop-desc" rows="3" placeholder="Describe tu propiedad..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Ubicación</label>
+        <input type="text" id="prop-location" placeholder="Ciudad, país" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio por noche (RD$)</label>
+          <input type="number" id="prop-price" placeholder="0.00" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Capacidad (personas)</label>
+          <input type="number" id="prop-capacity" placeholder="1" min="1" max="50" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveProperty()" style="width:100%;padding:13px;margin-top:8px;">Guardar Propiedad</button>
+    </div>
+  </div>
+
+  <!-- Block Dates Modal -->
+  <div class="modal-overlay" id="modal-block-dates">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('modal-block-dates')">✕</button>
+      <h3 class="modal-title" id="block-modal-title">Bloquear Fechas</h3>
+      <input type="hidden" id="block-prop-id" />
+      <input type="hidden" id="block-action-type" value="block" />
+      <p id="block-action-note" style="color:var(--muted);font-size:0.88rem;margin:-8px 0 14px 0;">
+        Selecciona un rango para bloquearlo en la propiedad.
+      </p>
+      <div class="form-group">
+        <label>Fecha inicio</label>
+        <input type="date" id="block-start" />
+      </div>
+      <div class="form-group">
+        <label>Fecha fin</label>
+        <input type="date" id="block-end" />
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button id="block-action-btn" class="btn-primary" onclick="submitDateAction()" style="flex:1;padding:12px;">Bloquear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal-overlay" id="modal-review">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('modal-review')">✕</button>
+      <h3 class="modal-title">Dejar Reseña</h3>
+      <input type="hidden" id="review-booking-id" />
+      <div class="form-group">
+        <label>Calificación</label>
+        <select id="review-rating">
+          <option value="5">⭐⭐⭐⭐⭐ — Excelente</option>
+          <option value="4">⭐⭐⭐⭐ — Muy bueno</option>
+          <option value="3">⭐⭐⭐ — Bueno</option>
+          <option value="2">⭐⭐ — Regular</option>
+          <option value="1">⭐ — Malo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Comentario</label>
+        <textarea id="review-comment" rows="4" placeholder="Comparte tu experiencia..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="submitReview()" style="width:100%;padding:13px;margin-top:8px;">Publicar reseña</button>
+    </div>
+  </div>
+
+  <!-- Host Bookings Modal -->
+  <div class="modal-overlay" id="modal-host-bookings">
+    <div class="modal" style="max-width:600px;">
+      <button class="modal-close" onclick="closeModal('modal-host-bookings')">✕</button>
+      <h3 class="modal-title">Reservas de la Propiedad</h3>
+      <div id="host-bookings-list" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Resend confirmation -->
+  <div class="modal-overlay" id="modal-resend">
+    <div class="modal" style="max-width:400px;">
+      <button class="modal-close" onclick="closeModal('modal-resend')">✕</button>
+      <h3 class="modal-title">Reenviar confirmación</h3>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="resend-email" placeholder="tu@correo.com" />
+      </div>
+      <button class="btn-primary" onclick="doResend()" style="width:100%;padding:13px;margin-top:8px;">Enviar correo</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+</div>
+
+<script src="./App.js"></script>
+</body>
+</html>

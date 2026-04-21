@@ -4,7 +4,6 @@ using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Airbnb.Domain.Interfaces;
 
 
 namespace Airbnb.API.Controllers
@@ -17,18 +16,21 @@ namespace Airbnb.API.Controllers
         private readonly CreateBookingUseCase _createBooking;
         private readonly CancelBookingUseCase _cancelBooking;
         private readonly CompleteBookingUseCase _completeBooking;
-        private readonly IBookingRepository _bookingRepository;
+        private readonly GetMyBookingsUseCase _getMyBookings;
+        private readonly GetBookingsByPropertyUseCase _getBookingsByProperty;
 
         public BookingsController(
             CreateBookingUseCase createBooking,
             CancelBookingUseCase cancelBooking,
             CompleteBookingUseCase completeBooking,
-            IBookingRepository bookingRepository)
+            GetMyBookingsUseCase getMyBookings,
+            GetBookingsByPropertyUseCase getBookingsByProperty)
         {
             _createBooking = createBooking;
             _cancelBooking = cancelBooking;
             _completeBooking = completeBooking;
-            _bookingRepository = bookingRepository;
+            _getMyBookings = getMyBookings;
+            _getBookingsByProperty = getBookingsByProperty;
         }
     
         [HttpPost]
@@ -71,8 +73,19 @@ namespace Airbnb.API.Controllers
             if (!Guid.TryParse(userIdClaim, out Guid userId))
                 return Unauthorized();
 
-            var bookings = await _bookingRepository.GetByGuestIdAsync(userId);
+            var bookings = await _getMyBookings.ExecuteAsync(userId);
             return Ok(bookings);
-}
+        }
+
+        [HttpGet("property/{propertyId}")]
+        public async Task<IActionResult> GetByProperty(Guid propertyId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdClaim, out Guid userId))
+                return Unauthorized();
+
+            var bookings = await _getBookingsByProperty.ExecuteAsync(propertyId, userId);
+            return Ok(bookings);
+        }
     }
 }

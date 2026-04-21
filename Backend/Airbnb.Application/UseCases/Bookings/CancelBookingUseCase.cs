@@ -50,9 +50,8 @@ namespace Airbnb.Application.UseCases.Bookings
             if (booking.GuestId != userId && property.HostId != userId)
                 throw new DomainExceptions("No tienes permiso para cancelar esta reserva.");
 
-            // 4. Cambiar estado y actualizar
-            booking.Status = BookingStatus.Cancelled;
-            await _bookingRepository.UpdateAsync(booking);
+            // 4. Cambiar estado a cancelado
+            await _bookingRepository.CancelAsync(booking.Id);
 
             // 5. Generar notificaciones en un try/catch
             try

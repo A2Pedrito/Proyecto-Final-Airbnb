@@ -1,5 +1,6 @@
-﻿﻿using Airbnb.Application.DTOs.Auth;
+using Airbnb.Application.DTOs.Auth;
 using Airbnb.Application.Interfaces;
+using Airbnb.Domain.Enum;
 using Airbnb.Domain.Exceptions;
 using Airbnb.Domain.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -40,7 +41,7 @@ namespace Airbnb.Application.UseCases.Auth
 
             if (!user.IsConfirmed)
             {
-                throw new DomainExceptions("El correo no está confirmado");
+                throw new DomainExceptions("El correo no está confirmado. Por favor, confirma tu cuenta para iniciar sesión.");
             }
 
             string token = _jwtProvider.GenerateToken(user);
@@ -50,8 +51,30 @@ namespace Airbnb.Application.UseCases.Auth
                 Token = token,
                 Name = user.Name ?? string.Empty,
                 Email = user.Email ?? string.Empty,
-                Role = user.Role.ToString()
+                Role = user.Role.ToString(),
+                Roles = BuildRoles(user.Role)
             };
+        }
+
+        private static List<string> BuildRoles(UserRole role)
+        {
+            var roles = new List<string>();
+            if (role.HasFlag(UserRole.Host))
+            {
+                roles.Add(UserRole.Host.ToString());
+            }
+
+            if (role.HasFlag(UserRole.Guest))
+            {
+                roles.Add(UserRole.Guest.ToString());
+            }
+
+            if (roles.Count == 0)
+            {
+                roles.Add(UserRole.Guest.ToString());
+            }
+
+            return roles;
         }
     }
 }

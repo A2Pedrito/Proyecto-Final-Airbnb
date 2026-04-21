@@ -1,4 +1,4 @@
-﻿using Airbnb.Domain.Entities;
+using Airbnb.Domain.Entities;
 using Airbnb.Domain.Enum;
 using Airbnb.Domain.Interfaces;
 using Airbnb.Infrastructure.Persistence;
@@ -28,10 +28,32 @@ namespace Airbnb.Infrastructure.Repositories
             }
         }
 
+        public async Task CompleteAsync(Guid bookingId)
+        {
+            var booking = await _context.Set<Booking>().FindAsync(bookingId);
+            if (booking != null)
+            {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                if (booking.CheckOut > today)
+                {
+                    booking.CheckOut = today;
+                }
+                booking.Status = BookingStatus.Completed;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<IEnumerable<Booking>> GetByGuestIdAsync(Guid guestId)
         {
             return await _context.Set<Booking>()
                 .Where(b => b.GuestId == guestId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Booking>> GetByPropertyIdAsync(Guid propertyId)
+        {
+            return await _context.Set<Booking>()
+                .Where(b => b.PropertyId == propertyId)
                 .ToListAsync();
         }
 

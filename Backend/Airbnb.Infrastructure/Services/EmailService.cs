@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
 using MimeKit;
+using Microsoft.Extensions.Configuration;
 
 namespace Airbnb.Infrastructure.Services
 {
@@ -26,8 +27,15 @@ namespace Airbnb.Infrastructure.Services
         private const string FromAddress = "noreply@airbnbclone.com";
         private const string FromName = "Airbnb Clone";
 
-        // URL base del frontend para construir el enlace de confirmación
-        private const string FrontendBaseUrl = "http://localhost:5173";
+        private readonly string _frontendBaseUrl;
+
+        public EmailService(IConfiguration configuration)
+        {
+            var configuredBaseUrl = configuration["Frontend:BaseUrl"];
+            _frontendBaseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+                ? "http://localhost:5173"
+                : configuredBaseUrl.TrimEnd('/');
+        }
 
         private async Task SendEmailAsync(string to, string subject, string htmlBody)
         {
@@ -67,12 +75,16 @@ namespace Airbnb.Infrastructure.Services
 
         public Task SendConfirmationEmailAsync(string email, string token)
         {
-            var confirmUrl = $"{FrontendBaseUrl}/confirm/{token}";
+            Console.WriteLine($"\n=======================================================\n[TOKEN DE CONFIRMACION] {token}\n=======================================================\n");
+
+            var confirmUrl = $"{_frontendBaseUrl}/?confirmToken={Uri.EscapeDataString(token)}";
             var html = $@"
-                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;'>
+                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #ddd;border-radius:8px;'>
                     <h2 style='color:#e11d48;'>🏠 Airbnb Clone</h2>
                     <h3>Confirma tu cuenta</h3>
-                    <p>Haz clic en el botón para activar tu cuenta. El enlace expira en 10 minutos.</p>
+                    <p><strong>Mensaje:</strong> Haz clic en el botón para activar tu cuenta. El enlace expira en 10 minutos.</p>
+                    <p><strong>Fecha de creación:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p><strong>Usuario destinatario:</strong> {email}</p>
                     <a href='{confirmUrl}'
                        style='display:inline-block;background:#e11d48;color:white;padding:12px 24px;
                               border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;'>
@@ -87,10 +99,12 @@ namespace Airbnb.Infrastructure.Services
         public Task SendBookingCreatedEmailAsync(string email, string message)
         {
             var html = $@"
-                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;'>
+                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #ddd;border-radius:8px;'>
                     <h2 style='color:#e11d48;'>🏠 Airbnb Clone</h2>
                     <h3>Nueva reserva confirmada</h3>
-                    <p>{message}</p>
+                    <p><strong>Mensaje:</strong> {message}</p>
+                    <p><strong>Fecha de creación:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p><strong>Usuario destinatario:</strong> {email}</p>
                 </div>";
 
             return SendEmailAsync(email, "Nueva reserva en tu propiedad", html);
@@ -99,10 +113,12 @@ namespace Airbnb.Infrastructure.Services
         public Task SendBookingCancelledEmailAsync(string email, string message)
         {
             var html = $@"
-                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;'>
+                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #ddd;border-radius:8px;'>
                     <h2 style='color:#e11d48;'>🏠 Airbnb Clone</h2>
                     <h3>Reserva cancelada</h3>
-                    <p>{message}</p>
+                    <p><strong>Mensaje:</strong> {message}</p>
+                    <p><strong>Fecha de creación:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p><strong>Usuario destinatario:</strong> {email}</p>
                 </div>";
 
             return SendEmailAsync(email, "Tu reserva fue cancelada", html);
@@ -111,10 +127,12 @@ namespace Airbnb.Infrastructure.Services
         public Task SendBookingCompletedEmailAsync(string email, string message)
         {
             var html = $@"
-                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;'>
+                <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #ddd;border-radius:8px;'>
                     <h2 style='color:#e11d48;'>🏠 Airbnb Clone</h2>
                     <h3>Estadía completada</h3>
-                    <p>{message}</p>
+                    <p><strong>Mensaje:</strong> {message}</p>
+                    <p><strong>Fecha de creación:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p><strong>Usuario destinatario:</strong> {email}</p>
                     <p>¡No olvides dejar una reseña!</p>
                 </div>";
 

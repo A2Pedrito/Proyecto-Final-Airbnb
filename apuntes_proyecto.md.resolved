@@ -1,0 +1,54 @@
+# 📚 Apuntes del Proyecto: Airbnb Clone (Programación II)
+
+Este documento es una guía de estudio sobre la arquitectura y los conceptos más complejos implementados en el proyecto. 
+
+## 1. Arquitectura del Backend: "Clean Architecture" (Arquitectura Limpia)
+El proyecto backend en C# está fuertemente estructurado y dividido en cuatro capas principales. Este patrón asegura que el código sea organizado, escalable y fácil de mantener o probar (testing).
+
+*   **Airbnb.Domain (Capa de Dominio):** Es el corazón del proyecto. Aquí viven las **Entidades** (`Booking`, `Property`, `User`), los **Enums** (como `BookingStatus`), las **Excepciones personalizadas** y las **Interfaces** de los repositorios. *Regla de oro: Esta capa no depende de absolutamente ninguna otra.*
+*   **Airbnb.Application (Capa de Aplicación):** Contiene todas las reglas de negocio. En lugar de usar servicios monolíticos, utiliza el **Patrón de Casos de Uso (Use Cases)** y **DTOs** (Data Transfer Objects) para estructurar la información que entra y sale.
+*   **Airbnb.Infrastructure (Capa de Infraestructura):** Se encarga de toda la comunicación con el "mundo exterior". Aquí se implementan los **Repositorios** (acceso a la base de datos usando Entity Framework Core), los **Servicios Externos** (como `EmailService`) y la **Seguridad** (generación de tokens con `JwtProvider`).
+*   **Airbnb.API (Capa de Presentación):** Contiene los **Controladores** (Endpoints de la API REST). Su único trabajo es actuar como "recepcionista": recibe la petición HTTP del usuario, se la pasa al Caso de Uso correspondiente y devuelve la respuesta al cliente. No contiene lógica de negocio.
+
+---
+
+## 2. El Patrón "Use Case" (Caso de Uso)
+Uno de los conceptos más avanzados del proyecto es cómo procesa las acciones de los usuarios. En lugar de tener controladores inmensos, usa clases dedicadas a una sola acción, cumpliendo el *Principio de Responsabilidad Única*.
+
+**Analizando `CreateBookingUseCase.cs`:**
+1.  **Inyección de Dependencias:** El caso de uso recibe por su constructor (gracias al contenedor de DI de .NET) todas las herramientas que necesita (repositorio de reservas, propiedades, notificaciones y servicio de email).
+2.  **Validación Robusta de Reglas:** Antes de tocar la base de datos, revisa las reglas críticas:
+    *   *El check-in debe ser anterior al check-out.*
+    *   *Un host no puede reservar su propia propiedad.*
+    *   *Las fechas no deben chocar con las bloqueadas (`_blockedDateRepository`).*
+3.  **Manejo de Errores Controlado:** Si algo falla, lanza excepciones de dominio (ej. `ConflictException`), las cuales la API intercepta y transforma en respuestas HTTP coherentes (como un error `409 Conflict`).
+4.  **Resiliencia y Tolerancia a Fallos:** Si observas la parte donde guarda la notificación y envía el email al host, notarás que está envuelta en un `try/catch` vacío. Esto es una decisión arquitectónica: **si el servicio de correo falla o está caído, la reserva del usuario igual se guarda exitosamente**. El proceso secundario (email) no bloquea al proceso crítico (reserva).
+
+---
+
+## 3. Seguridad y Autenticación (JWT y Hasheo)
+El proyecto no utiliza el sistema de sesiones tradicional basado en cookies que guarda el estado en el servidor (Stateless API).
+
+*   **JSON Web Tokens (JWT):** Cuando un usuario inicia sesión correctamente, la clase `JwtProvider.cs` (en Infraestructura) genera un token codificado. Este token lleva encriptada información vital (la ID del usuario y su rol: `Guest` o `Host`).
+*   **El Flujo:** Este token se devuelve al Frontend, que debe almacenarlo (típicamente en `localStorage`) y adjuntarlo en la cabecera HTTP `Authorization: Bearer <token>` en cada petición futura a rutas privadas.
+*   **Seguridad de Contraseñas:** Las contraseñas jamás se guardan legibles. `PasswordHasher.cs` aplica algoritmos de derivación criptográfica. Incluso si alguien roba la base de datos, no podrá ver las contraseñas reales.
+
+---
+
+## 4. Servicio de Emails Asíncrono con "Mailpit"
+En la clase `EmailService.cs` vemos cómo el proyecto gestiona el envío de correos electrónicos (confirmaciones, cancelaciones, nuevas reservas).
+
+*   **El Desafío del Desarrollo:** Al programar y probar localmente, enviar correos a direcciones falsas o reales causaría rebotes masivos y bloquearía cuentas (Spam).
+*   **La Solución Inteligente (Mailpit):** El sistema está configurado para conectarse a `localhost:1025`. Mailpit es una herramienta local que actúa como un agujero negro: recibe todos los emails que envía la aplicación y los atrapa. Luego, el desarrollador puede entrar a `http://localhost:8025` y ver cómo quedó el diseño HTML del correo sin haberlo enviado realmente a la web.
+*   **MimeKit y MailKit:** Utiliza estas modernas librerías para ensamblar mensajes HTML enriquecidos, pasando parámetros dinámicos mediante interpolación de strings (`$""`).
+
+---
+
+## 5. El Frontend: La Complejidad del Vanilla JS (App.js)
+El archivo `App.js` en la carpeta `Frontend` es un mastodonte técnico de más de 30 KB. La razón de su complejidad radica en que es una **Single Page Application (SPA)** construida completamente con **JavaScript Vanilla**, sin utilizar librerías que facilitan la vida como React o Angular.
+
+**Aspectos más retadores del Frontend:**
+1.  **Manejo Manual del Estado y Autenticación:** La aplicación tiene que verificar constantemente si el usuario está conectado leyendo `localStorage.getItem('token')`. Si el token expira o es borrado, todo el sistema de UI debe reaccionar manualmente y redirigir al Login.
+2.  **Manipulación Directa del DOM:** Sin el Virtual DOM de React, el código debe inyectar plantillas HTML stringificadas y usar métodos como `document.getElementById` y `innerHTML` para renderizar listas de propiedades o reservas. Esto lo hace propenso a errores si los IDs en el HTML y el JS no coinciden perfectamente.
+3.  **Routing Simulado:** No hay páginas reales (ej. `contacto.html`, `propiedades.html`). Toda la navegación se basa en ocultar y mostrar diferentes etiquetas `<div>` (`classList.remove('hidden')`, `classList.add('hidden')`) interceptando los clicks de los botones en la barra de navegación.
+4.  **Fetch API con Inyección Dinámica:** Cada llamada a la API requiere configurar las cabeceras manualmente. Cuando se invoca un endpoint protegido, la aplicación debe interceptar la llamada, sacar el Token del Storage y armar las opciones de la petición Fetch, para luego manejar respuestas exitosas, vacías o errores (mostrando alertas de UI acordes).

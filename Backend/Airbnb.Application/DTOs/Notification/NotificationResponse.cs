@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -10,6 +10,7 @@ namespace Airbnb.Application.DTOs.Notification
     public class NotificationResponse
     {
         public Guid Id { get; set; }
+        public Guid UserId { get; set; }
         public string? Message { get; set; }
         public bool IsRead { get; set; }
         public DateTime CreatedAt { get; set; }

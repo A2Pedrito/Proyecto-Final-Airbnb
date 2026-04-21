@@ -21,7 +21,8 @@ namespace Airbnb.Application.DTOs.Auth
         [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Debes seleccionar un rol.")]
-        public UserRole Role { get; set; }
+        [Required(ErrorMessage = "Debes seleccionar al menos un rol.")]
+        [MinLength(1, ErrorMessage = "Debes seleccionar al menos un rol.")]
+        public List<UserRole> Roles { get; set; } = new();
     }
 }

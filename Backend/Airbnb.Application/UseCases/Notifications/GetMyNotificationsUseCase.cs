@@ -38,6 +38,7 @@ namespace Airbnb.Application.UseCases.Notifications
             return (notifications ?? new List<Notification>()).Select(n => new NotificationResponse
             {
                 Id = n.Id,
+                UserId = n.UserId,
                 Message = n.Message,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt

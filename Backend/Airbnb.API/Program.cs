@@ -64,11 +64,13 @@ namespace Airbnb.API
             builder.Services.AddScoped<BlockDatesUseCase>();
             builder.Services.AddScoped<GetPropertyReviewsUseCase>();
             builder.Services.AddScoped<CreateReviewUseCase>();
+            builder.Services.AddScoped<CreateBookingUseCase>();
             builder.Services.AddScoped<CompleteBookingUseCase>();
             builder.Services.AddScoped<CancelBookingUseCase>();
+            builder.Services.AddScoped<GetMyBookingsUseCase>();
+            builder.Services.AddScoped<GetBookingsByPropertyUseCase>();
             builder.Services.AddScoped<MarkNotificationAsReadUseCase>();
             builder.Services.AddScoped<GetMyNotificationsUseCase>();
-            builder.Services.AddScoped<IEmailServices, EmailService>();
 
             builder.Services.AddCors();
 

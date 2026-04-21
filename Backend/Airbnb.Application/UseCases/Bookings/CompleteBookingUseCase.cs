@@ -50,13 +50,12 @@ namespace Airbnb.Application.UseCases.Bookings
             if (booking.GuestId != userId && property.HostId != userId)
                 throw new DomainExceptions("No tienes permiso para completar esta reserva.");
 
-            // 4. Validar que la fecha de salida ya haya pasado (Hoy debe ser MAYOR al CheckOut)
-            if (DateOnly.FromDateTime(DateTime.UtcNow) <= booking.CheckOut)
-                throw new DomainExceptions("No se puede completar una reserva antes de su fecha de salida.");
+            // 4. (Opcional) Si la fecha de salida aún no ha pasado y se completa la reserva,
+            // el repositorio se encargará de ajustar la fecha de CheckOut al día de hoy
+            // para reflejar que la estadía terminó de forma anticipada.
 
             // 5. Cambiar estado y actualizar
-            booking.Status = BookingStatus.Completed;
-            await _bookingRepository.UpdateAsync(booking);
+            await _bookingRepository.CompleteAsync(booking.Id);
 
             // 6. Notificar al guest en un try/catch
             try

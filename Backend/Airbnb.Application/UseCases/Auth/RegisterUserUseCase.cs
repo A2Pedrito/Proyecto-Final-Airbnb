@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using Airbnb.Application.DTOs.Auth;
+using Airbnb.Application.DTOs.Auth;
 using Airbnb.Application.Interfaces;
 using Airbnb.Domain.Entities;
 using Airbnb.Domain.Exceptions;
@@ -26,6 +26,11 @@ namespace Airbnb.Application.UseCases.Auth
 
         public async Task<string> ExecuteAsync(RegisterRequest request)
         {
+            if (request.Roles == null || !request.Roles.Any())
+            {
+                throw new DomainExceptions("Debes seleccionar al menos un rol.");
+            }
+
             var existingUser = await _userRepository.GetByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -40,7 +45,7 @@ namespace Airbnb.Application.UseCases.Auth
                 Name = request.Name,
                 Email = request.Email,
                 PasswordHash = hashedPassword,
-                Role = request.Role,
+                Role = request.Roles.Aggregate((current, next) => current | next),
                 IsConfirmed = false,
                 ConfirmationToken = Guid.NewGuid().ToString(),
                 TokenExpiry = DateTime.UtcNow.AddMinutes(10) // Corregido: Aumentar a 10 min para coincidir con el email
@@ -48,9 +53,22 @@ namespace Airbnb.Application.UseCases.Auth
 
             await _userRepository.AddAsync(newUser);
 
-            await _emailServices.SendConfirmationEmailAsync(newUser.Email, newUser.ConfirmationToken!);
+            // Imprimir el token en la consola para pruebas
+            Console.WriteLine($"\n========================================");
+            Console.WriteLine($"[NOTIFICACIÓN DE TOKEN] Usuario: {newUser.Email}");
+            Console.WriteLine($"Token de confirmación: {newUser.ConfirmationToken}");
+            Console.WriteLine($"========================================\n");
 
-            return "Usuario registrado con éxito. Por favor verifica tu correo.";
+            try
+            {
+                await _emailServices.SendConfirmationEmailAsync(newUser.Email, newUser.ConfirmationToken!);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enviando email: {ex.Message}");
+            }
+
+            return "Usuario registrado con éxito. Por favor verifica tu correo (el token se ha impreso en la consola).";
         }
     }
 }
