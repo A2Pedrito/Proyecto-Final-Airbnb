@@ -1,163 +1,191 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { createProperty, updateProperty, getPropertyById } from '../../api/propertyService';
+import { useNavigate, Link } from 'react-router-dom';
+import { getProperties, blockDates, unblockDates } from '../../api/propertyService';
 
-const fields = [
-  {
-    name: 'title',
-    label: 'Título de la propiedad',
-    subtitle: 'El nombre que verán los huéspedes al buscar',
-    placeholder: 'Ej: Casa moderna en el centro con vista al mar',
-    type: 'text',
-  },
-  {
-    name: 'description',
-    label: 'Descripción',
-    subtitle: 'Describe qué hace especial a tu propiedad',
-    placeholder: 'Ej: Espaciosa casa de 2 habitaciones con piscina, a 5 minutos de la playa...',
-    type: 'text',
-  },
-  {
-    name: 'location',
-    label: 'Ubicación',
-    subtitle: 'Ciudad o zona donde se encuentra la propiedad (no se puede editar después)',
-    placeholder: 'Ej: Punta Cana, La Altagracia',
-    type: 'text',
-  },
-  {
-    name: 'pricePerNight',
-    label: 'Precio por noche',
-    subtitle: 'Tarifa en dólares que pagarán los huéspedes por cada noche',
-    placeholder: 'Ej: 120',
-    type: 'number',
-  },
-  {
-    name: 'capacity',
-    label: 'Capacidad máxima',
-    subtitle: 'Número máximo de personas que puede alojar la propiedad',
-    placeholder: 'Ej: 4',
-    type: 'number',
-  },
-];
-
-export default function PropertyFormPage() {
-  const { id } = useParams();
+export default function MyPropertiesPage() {
   const navigate = useNavigate();
-  const isEditing = Boolean(id);
-
-  const [form, setForm] = useState({
-    title: '', description: '', location: '', pricePerNight: '', capacity: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState({ text: '', type: '' });
+  
+  // Modal for blocking dates
+  const [blockModal, setBlockModal] = useState({ isOpen: false, property: null, date: '', isBlocking: true });
 
   useEffect(() => {
-    if (isEditing) {
-      getPropertyById(id).then(res => {
-        const p = res.data;
-        setForm({
-          title: p.title,
-          description: p.description,
-          location: p.location,
-          pricePerNight: p.pricePerNight,
-          capacity: p.capacity,
-        });
-      });
-    }
-  }, [id]);
+    fetchProperties();
+  }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const data = {
-      ...form,
-      pricePerNight: parseFloat(form.pricePerNight),
-      capacity: parseInt(form.capacity),
-    };
+  const fetchProperties = async () => {
     try {
-      if (isEditing) await updateProperty(id, data);
-      else await createProperty(data);
-      navigate('/host/properties');
+      setLoading(true);
+      const res = await getProperties();
+      
+      // Get the host ID from the token to filter properties
+      const token = localStorage.getItem('token');
+      let hostId = null;
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          hostId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || payload.sub || payload.nameid;
+        } catch (e) {
+          console.error("Error parsing token", e);
+        }
+      }
+
+      // If we found a hostId, filter. Otherwise show all (fallback for development)
+      const hostProperties = hostId 
+        ? res.data.filter(p => p.hostId === hostId)
+        : res.data;
+        
+      setProperties(hostProperties);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar la propiedad. Verifica los datos.');
+      setMessage({ text: 'Error al cargar propiedades.', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleOpenBlockModal = (property, isBlocking) => {
+    setBlockModal({ isOpen: true, property, date: '', isBlocking });
+  };
+
+  const handleConfirmBlockAction = async () => {
+    if (!blockModal.date) {
+      setMessage({ text: 'Selecciona una fecha.', type: 'warn' });
+      return;
+    }
+    
+    try {
+      const datesToProcess = [blockModal.date];
+      if (blockModal.isBlocking) {
+        await blockDates(blockModal.property.id, datesToProcess);
+        setMessage({ text: 'Fecha bloqueada exitosamente.', type: 'success' });
+      } else {
+        await unblockDates(blockModal.property.id, datesToProcess);
+        setMessage({ text: 'Fecha desbloqueada exitosamente.', type: 'success' });
+      }
+      setBlockModal({ isOpen: false, property: null, date: '', isBlocking: true });
+    } catch (err) {
+      setMessage({ text: err.response?.data?.error || 'No se pudo completar la acción.', type: 'error' });
+    }
+  };
+
+  const msgStyle = {
+    success: 'bg-green-50 border-green-200 text-green-700',
+    error:   'bg-red-50 border-red-200 text-red-700',
+    warn:    'bg-amber-50 border-amber-200 text-amber-700',
+  };
+
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="mb-6">
-        <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Panel del host</p>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {isEditing ? 'Editar propiedad' : 'Nueva propiedad'}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          {isEditing
-            ? 'Actualiza los datos de tu alojamiento'
-            : 'Completa los datos para publicar tu alojamiento'}
-        </p>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Panel del host</p>
+          <h1 className="text-3xl font-bold text-gray-900">Mis Propiedades</h1>
+        </div>
+        <Link 
+          to="/host/properties/new" 
+          className="bg-rose-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-rose-700 transition"
+        >
+          + Nueva Propiedad
+        </Link>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        {error && (
-          <div className="mb-5 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-xl">
-            <span>⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
+      {message.text && (
+        <div className={`mb-5 flex items-start gap-2 border rounded-xl p-3 text-sm ${msgStyle[message.type]}`}>
+          <span>{message.type === 'success' ? '✅' : message.type === 'error' ? '⚠️' : '💡'}</span>
+          <span>{message.text}</span>
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {fields.map(field => {
-            // La ubicación no se puede editar
-            const isDisabled = isEditing && field.name === 'location';
-            return (
-              <div key={field.name}>
-                <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide mb-1">
-                  {field.label}
-                </p>
-                <label className="text-sm text-gray-600 mb-1 block">
-                  {field.subtitle}
-                </label>
-                <input
-                  name={field.name}
-                  type={field.type}
-                  value={form[field.name]}
-                  onChange={handleChange}
-                  placeholder={field.placeholder}
-                  disabled={isDisabled}
-                  className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition
-                    ${isDisabled ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`}
-                  required
-                />
-                {isDisabled && (
-                  <p className="text-xs text-amber-600 mt-1">⚠️ La ubicación no se puede cambiar después de crear la propiedad</p>
-                )}
+      {loading ? (
+        <p className="text-gray-500">Cargando propiedades...</p>
+      ) : properties.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <p className="text-4xl mb-3">🏠</p>
+          <p className="text-gray-600 font-medium">No tienes propiedades registradas</p>
+          <Link to="/host/properties/new" className="text-rose-600 text-sm mt-1 hover:underline">
+            Crea tu primer alojamiento aquí
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {properties.map(p => (
+            <div key={p.id} className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center shadow-sm hover:shadow-md transition">
+              <div className="flex-1 mb-4 md:mb-0">
+                <h2 className="font-semibold text-gray-900 text-lg">{p.title}</h2>
+                <p className="text-gray-500 text-sm">📍 {p.location}</p>
+                <div className="flex gap-4 mt-2">
+                  <span className="text-rose-600 font-semibold text-sm">${p.pricePerNight}/noche</span>
+                  <span className="text-gray-400 text-sm">👥 Hasta {p.capacity} huéspedes</span>
+                </div>
               </div>
-            );
-          })}
+              
+              <div className="flex gap-2 flex-wrap">
+                <Link
+                  to={`/host/properties/${p.id}/edit`}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-200 transition"
+                >
+                  Editar
+                </Link>
+                <button
+                  onClick={() => handleOpenBlockModal(p, true)}
+                  className="bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-amber-200 transition"
+                >
+                  Bloquear Fecha
+                </button>
+                <button
+                  onClick={() => handleOpenBlockModal(p, false)}
+                  className="border border-amber-200 text-amber-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-amber-50 transition"
+                >
+                  Desbloquear
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-rose-600 text-white py-2.5 rounded-xl font-semibold hover:bg-rose-700 active:scale-95 transition disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : isEditing ? '💾 Guardar cambios' : '🚀 Publicar propiedad'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/host/properties')}
-              className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition"
-            >
-              Cancelar
-            </button>
+      {/* Block/Unblock Dates Modal */}
+      {blockModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {blockModal.isBlocking ? 'Bloquear Fecha' : 'Desbloquear Fecha'}
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Selecciona la fecha que deseas {blockModal.isBlocking ? 'bloquear' : 'desbloquear'} para <strong>{blockModal.property.title}</strong>.
+            </p>
+            
+            <div className="mb-6">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-1">Fecha</label>
+              <input
+                type="date"
+                value={blockModal.date}
+                onChange={(e) => setBlockModal({ ...blockModal, date: e.target.value })}
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBlockModal({ isOpen: false, property: null, date: '', isBlocking: true })}
+                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmBlockAction}
+                className={`flex-1 text-white py-2.5 rounded-xl font-semibold active:scale-95 transition ${
+                  blockModal.isBlocking ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

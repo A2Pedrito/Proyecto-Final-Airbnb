@@ -10,6 +10,7 @@ export default function SearchPage() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [bookingModal, setBookingModal] = useState({ isOpen: false, property: null, checkIn: '', checkOut: '' });
 
   const handleChange = (e) => setFilters({ ...filters, [e.target.name]: e.target.value });
 
@@ -36,30 +37,43 @@ export default function SearchPage() {
     }
   };
 
-  const handleBook = async (propertyId) => {
-    if (!filters.checkIn || !filters.checkOut) {
+  const handleBookClick = (property) => {
+    setBookingModal({
+      isOpen: true,
+      property,
+      checkIn: filters.checkIn || '',
+      checkOut: filters.checkOut || ''
+    });
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!bookingModal.checkIn || !bookingModal.checkOut) {
       setMessage({ text: 'Selecciona fechas de entrada y salida antes de reservar.', type: 'warn' });
       return;
     }
+    setLoading(true);
     try {
       const response = await createBooking({
-        propertyId,
-        checkIn: filters.checkIn,
-        checkOut: filters.checkOut,
+        propertyId: bookingModal.property.id,
+        checkIn: bookingModal.checkIn,
+        checkOut: bookingModal.checkOut,
       });
       const newBooking = {
         id: response?.data?.id || crypto.randomUUID(),
-        propertyId,
-        checkIn: filters.checkIn,
-        checkOut: filters.checkOut,
+        propertyId: bookingModal.property.id,
+        checkIn: bookingModal.checkIn,
+        checkOut: bookingModal.checkOut,
         status: 'Confirmed',
       };
       const existing = JSON.parse(localStorage.getItem('myBookings') || '[]');
       existing.push(newBooking);
       localStorage.setItem('myBookings', JSON.stringify(existing));
       setMessage({ text: '¡Reserva creada exitosamente! Puedes verla en "Mis Reservas".', type: 'success' });
+      setBookingModal({ isOpen: false, property: null, checkIn: '', checkOut: '' });
     } catch (err) {
       setMessage({ text: err.response?.data?.error || 'No se pudo crear la reserva.', type: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -200,13 +214,60 @@ export default function SearchPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleBook(p.id)}
+                  onClick={() => handleBookClick(p)}
                   className="bg-rose-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-rose-700 active:scale-95 transition whitespace-nowrap"
                 >
                   Reservar
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {bookingModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Reservar {bookingModal.property.title}</h2>
+            <p className="text-sm text-gray-500 mb-4">Elige tus fechas de estadía para continuar.</p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-1">Entrada</label>
+                <input
+                  type="date"
+                  value={bookingModal.checkIn}
+                  onChange={(e) => setBookingModal({ ...bookingModal, checkIn: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-1">Salida</label>
+                <input
+                  type="date"
+                  value={bookingModal.checkOut}
+                  onChange={(e) => setBookingModal({ ...bookingModal, checkOut: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBookingModal({ isOpen: false, property: null, checkIn: '', checkOut: '' })}
+                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmBooking}
+                disabled={loading}
+                className="flex-1 bg-rose-600 text-white py-2.5 rounded-xl font-semibold hover:bg-rose-700 active:scale-95 transition disabled:opacity-50"
+              >
+                {loading ? 'Confirmando...' : 'Confirmar Reserva'}
+              </button>
+            </div>
           </div>
         </div>
       )}

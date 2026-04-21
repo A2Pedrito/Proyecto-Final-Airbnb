@@ -1,4 +1,4 @@
-﻿﻿using Airbnb.Application.DTOs.Auth;
+﻿﻿﻿﻿using Airbnb.Application.DTOs.Auth;
 using Airbnb.Application.Interfaces;
 using Airbnb.Domain.Entities;
 using Airbnb.Domain.Exceptions;
@@ -43,7 +43,7 @@ namespace Airbnb.Application.UseCases.Auth
                 Role = request.Role,
                 IsConfirmed = false,
                 ConfirmationToken = Guid.NewGuid().ToString(),
-                TokenExpiry = DateTime.UtcNow.AddMinutes(2)
+                TokenExpiry = DateTime.UtcNow.AddMinutes(10) // Corregido: Aumentar a 10 min para coincidir con el email
             };
 
             await _userRepository.AddAsync(newUser);
