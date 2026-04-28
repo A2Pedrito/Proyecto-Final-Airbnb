@@ -18,31 +18,6 @@ namespace Airbnb.Infrastructure.Repositories
         {
         }
 
-        public async Task CancelAsync(Guid bookingId)
-        {
-            var booking = await _context.Set<Booking>().FindAsync(bookingId);
-            if (booking != null)
-            {
-                booking.Status = BookingStatus.Cancelled;
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task CompleteAsync(Guid bookingId)
-        {
-            var booking = await _context.Set<Booking>().FindAsync(bookingId);
-            if (booking != null)
-            {
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-                if (booking.CheckOut > today)
-                {
-                    booking.CheckOut = today;
-                }
-                booking.Status = BookingStatus.Completed;
-                await _context.SaveChangesAsync();
-            }
-        }
-
         public async Task<IEnumerable<Booking>> GetByGuestIdAsync(Guid guestId)
         {
             return await _context.Set<Booking>()
@@ -67,33 +42,5 @@ namespace Airbnb.Infrastructure.Repositories
             .ToListAsync();
         }
 
-        public async Task<Booking> CreateWithConcurrencyControlAsync(Booking booking)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync(
-                System.Data.IsolationLevel.Serializable);
-            try
-            {
-                // Re-verificar solapamiento DENTRO de la transacción
-                var overlap = await _context.Set<Booking>()
-                    .Where(b => b.PropertyId == booking.PropertyId &&
-                                b.Status == BookingStatus.Confirmed &&
-                                b.CheckIn < booking.CheckOut &&
-                                b.CheckOut > booking.CheckIn)
-                    .AnyAsync();
-
-                if (overlap)
-                    throw new ConflictException("La propiedad ya no está disponible.");
-
-                _context.Set<Booking>().Add(booking);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return booking;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
     }
 }

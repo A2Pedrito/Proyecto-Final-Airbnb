@@ -29,13 +29,8 @@ namespace Airbnb.Application.UseCases.Auth
         {
             var user = await _userRepository.GetByEmailAsync(request.Email);
             
-            // Para prevenir la enumeración de usuarios, no revelamos si el correo no existe
-            // o si la contraseña es incorrecta. En ambos casos, el resultado es el mismo:
-            // fallo de autenticación.
             if (user == null || !_passwordHasher.Verify(request.Password, user.PasswordHash!))
             {
-                // Lanzamos la misma excepción genérica en ambos casos.
-                // El código de estado HTTP 401 Unauthorized es el apropiado aquí.
                 throw new UnauthorizedException("Correo o contraseña inválidos.");
             }
 
@@ -61,17 +56,17 @@ namespace Airbnb.Application.UseCases.Auth
             var roles = new List<string>();
             if (role.HasFlag(UserRole.Host))
             {
-                roles.Add(UserRole.Host.ToString());
+                roles.Add(nameof(UserRole.Host));
             }
 
             if (role.HasFlag(UserRole.Guest))
             {
-                roles.Add(UserRole.Guest.ToString());
+                roles.Add(nameof(UserRole.Guest));
             }
 
             if (roles.Count == 0)
             {
-                roles.Add(UserRole.Guest.ToString());
+                roles.Add(nameof(UserRole.Guest));
             }
 
             return roles;

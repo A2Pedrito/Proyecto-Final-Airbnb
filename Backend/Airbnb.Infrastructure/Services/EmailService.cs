@@ -7,40 +7,38 @@ using Microsoft.Extensions.Configuration;
 
 namespace Airbnb.Infrastructure.Services
 {
-    // Mailpit es un servidor de correo local para desarrollo.
-    // Captura todos los emails enviados y los muestra en http://localhost:8025
-    // Los emails NUNCA llegan a destinatarios reales — es solo para pruebas.
-    //
-    // Para instalarlo: https://mailpit.axllent.org/docs/install/
-    // Windows: winget install axllent.mailpit
-    // Mac:     brew install axllent/apps/mailpit
-    // Linux:   descarga el binario de https://github.com/axllent/mailpit/releases
-    //
-    // Para correrlo: mailpit   (en una terminal aparte)
-    // Panel web:     http://localhost:8025
-
+    /// <summary>
+    /// Servicio para el envío de correos electrónicos usando Mailpit como servidor SMTP de desarrollo
+    /// </summary>
     public class EmailService : IEmailServices
     {
-        // Mailpit escucha en el puerto 1025 para SMTP por defecto
+        // ==================== CONSTANTES ====================
         private const string SmtpHost = "localhost";
         private const int SmtpPort = 1025;
         private const string FromAddress = "noreply@airbnbclone.com";
         private const string FromName = "Airbnb Clone";
 
+        // ==================== CAMPOS PRIVADOS ====================
         private readonly string _frontendBaseUrl;
 
+        // ==================== CONSTRUCTOR ====================
         public EmailService(IConfiguration configuration)
         {
+            // 🔍 LEE la configuración desde appsettings.json
             var configuredBaseUrl = configuration["Frontend:BaseUrl"];
+            
+            // 🎯 ASIGNA un valor por defecto si no existe configuración
             _frontendBaseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
-                ? "http://localhost:5173"
-                : configuredBaseUrl.TrimEnd('/');
+                ? "http://localhost:5173"  // Valor por defecto (Vite/React)
+                : configuredBaseUrl.TrimEnd('/');  // Elimina '/' final si existe
         }
 
+        // ==================== MÉTODOS PRIVADOS ====================
         private async Task SendEmailAsync(string to, string subject, string htmlBody)
         {
             try
             {
+                // 1. CONSTRUIR el mensaje
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(FromName, FromAddress));
                 message.To.Add(MailboxAddress.Parse(to));
@@ -52,32 +50,39 @@ namespace Airbnb.Infrastructure.Services
                 };
                 message.Body = builder.ToMessageBody();
 
+                // 2. ENVIAR usando SMTP
                 using var client = new SmtpClient();
-
-                // Conectar sin SSL/TLS, ya que Mailpit no lo usa por defecto.
-                await client.ConnectAsync(SmtpHost, SmtpPort, false);
-
+                await client.ConnectAsync(SmtpHost, SmtpPort, false); 
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
 
+                // 3. REGISTRO de éxito
                 Console.WriteLine($"[EMAIL] Enviado a {to} — Asunto: {subject}");
             }
             catch (Exception ex)
             {
-                // Si Mailpit no está corriendo, solo logea — no rompe el flujo
+                // 4. REGISTRO de error
                 Console.WriteLine($"[EMAIL ERROR] No se pudo enviar a {to}: {ex.Message}");
                 Console.WriteLine("[EMAIL] ¿Está Mailpit corriendo? Ejecuta 'mailpit' en una terminal.");
-                // Es importante relanzar la excepción para que el código que llama a este servicio
-                // sepa que el correo no se pudo enviar y pueda manejar el error adecuadamente.
+                
+                // 5. RELANZAR la excepción para que el llamador sepa que falló
                 throw;
             }
         }
 
+        // ==================== MÉTODOS PÚBLICOS ====================
+        
         public Task SendConfirmationEmailAsync(string email, string token)
         {
-            Console.WriteLine($"\n=======================================================\n[TOKEN DE CONFIRMACION] {token}\n=======================================================\n");
+            // 📝 LOG para debugging (útil en desarrollo)
+            Console.WriteLine($"\n=======================================================");
+            Console.WriteLine($"[TOKEN DE CONFIRMACION] {token}");
+            Console.WriteLine($"=======================================================\n");
 
+            // 🔗 CONSTRUYE la URL usando _frontendBaseUrl (¡AQUÍ se usa!)
             var confirmUrl = $"{_frontendBaseUrl}/?confirmToken={Uri.EscapeDataString(token)}";
+            
+            // 📧 CONSTRUYE el HTML del correo
             var html = $@"
                 <div style='font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #ddd;border-radius:8px;'>
                     <h2 style='color:#e11d48;'>🏠 Airbnb Clone</h2>
@@ -93,6 +98,7 @@ namespace Airbnb.Infrastructure.Services
                     <p style='color:#888;font-size:12px;'>O copia este enlace: {confirmUrl}</p>
                 </div>";
 
+            // ✉️ ENVÍA el correo
             return SendEmailAsync(email, "Confirma tu cuenta en Airbnb Clone", html);
         }
 

@@ -13,7 +13,10 @@ namespace Airbnb.Infrastructure.Security
     public class JwtProvider : IJwtProvider
     {
         private readonly IConfiguration _config;
-        public JwtProvider(IConfiguration config) => _config = config;
+        public JwtProvider(IConfiguration config) 
+        {
+            _config = config;
+        }
 
         /// Genera un token JWT válido para el usuario especificado, asignando sus respectivos roles y claims.
         public string GenerateToken(User user)
